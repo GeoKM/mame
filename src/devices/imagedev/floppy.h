@@ -91,6 +91,7 @@ public:
 	void set_sectoring_type(uint32_t sectoring_type);
 	uint32_t get_sectoring_type();
 	void set_media_change_time(const attotime &time) { m_media_change_time = time; }
+	void set_held_ready(bool held_ready);
 
 	void init_fs(const fs_info *fs, const fs::meta_data &meta);
 
@@ -200,6 +201,7 @@ protected:
 	uint32_t m_form_factor; /* 3"5, 5"25, etc */
 	uint32_t m_sectoring_type; /* SOFT, Hard 10/16/32 */
 	bool m_motor_always_on;
+	bool m_held_ready;
 	bool m_dskchg_writable;
 	bool m_has_trk00_sensor;
 	attotime m_media_change_time;

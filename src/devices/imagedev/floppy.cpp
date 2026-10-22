@@ -283,6 +283,7 @@ floppy_image_device::floppy_image_device(const machine_config &mconfig, device_t
 	m_form_factor(0),
 	m_sectoring_type(floppy_image::SOFT),
 	m_motor_always_on(false),
+	m_held_ready(false),
 	m_dskchg_writable(false),
 	m_has_trk00_sensor(true),
 	m_media_change_time(attotime::zero),
@@ -336,6 +337,13 @@ void floppy_image_device::setup_index_pulse_cb(index_pulse_cb cb)
 void floppy_image_device::setup_ready_cb(ready_cb cb)
 {
 	m_cur_ready_cb = cb;
+}
+
+void floppy_image_device::set_held_ready(bool held_ready)
+{
+	m_held_ready = held_ready;
+	if (exists() && m_mon)
+		set_ready(!m_held_ready);
 }
 
 void floppy_image_device::setup_wpt_cb(wpt_cb cb)
@@ -625,7 +633,7 @@ void floppy_image_device::device_reset()
 	m_revolution_count = 0;
 	m_stopped_position = 0;
 	m_mon = 1;
-	set_ready(true);
+	set_ready(!m_held_ready || !m_image);
 	if(m_motor_always_on && m_image)
 		mon_w(0);
 	cache_clear();
@@ -687,6 +695,11 @@ void floppy_image_device::init_floppy_load(bool write_supported)
 
 	if (m_dskchg_writable)
 		m_dskchg = 1;
+
+	// Drives with a latched READY output retain it while their motor is off.
+	// Loading an image represents a disk already inserted and clamped.
+	if (m_held_ready)
+		set_ready(false);
 }
 
 void floppy_image_device::change_media(bool wpt)
@@ -878,7 +891,8 @@ void floppy_image_device::mon_w(int state)
 		cache_clear();
 		m_revolution_start_time = attotime::never;
 		m_index_timer->adjust(attotime::zero);
-		set_ready(true);
+		if (!m_held_ready || !exists())
+			set_ready(true);
 	}
 
 	// Create a motor sound (loaded or empty)

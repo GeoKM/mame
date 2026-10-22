@@ -901,6 +901,9 @@ void ngen_state::machine_start()
 		fatalerror("VRAM not found\n");
 	m_vram.set(*vidshare,2);
 	m_fontram.set(*fontshare,2);
+	// The drive's held-READY option reports media removal even with the motor
+	// stopped.  See Floppy/Hard Disk Manual A-09-00328-01-A, section 3.1.3.11.
+	m_fd0->get_device()->set_held_ready(true);
 }
 
 void ngen_state::machine_reset()
@@ -1075,7 +1078,6 @@ void ngen_state::ngen(machine_config &config)
 	WD2797(config, m_fdc, 20_MHz_XTAL / 20);
 	m_fdc->intrq_wr_callback().set(FUNC(ngen_state::fdc_irq_w));
 	m_fdc->drq_wr_callback().set(m_maincpu, FUNC(i80186_cpu_device::drq1_w));
-	m_fdc->set_force_ready(true);
 
 	PIT8253(config, m_fdc_timer);
 	m_fdc_timer->set_clk<0>(0);
